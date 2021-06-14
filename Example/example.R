@@ -5,6 +5,7 @@ library(stars)
 library(pracma)
 library(parallel)
 library(compiler)
+library(EBImage)
 
 source("~/deltas/ROAM/OAM_functions.R")
 
