@@ -35,6 +35,14 @@ idIn <- cmpfun(function(idx, idy, nro, nco) {
          NA)
 })
 
+cRotate <- cmpfun(function(theta) {
+  matrix(c(cos(theta), sin(theta), -sin(theta), cos(theta)), nrow = 2, ncol = 2)
+})
+
+deg2Rad <- cmpfun(function(deg) {
+  deg*pi/180
+})
+
 openingAngle <- function(testset, queryset, precision = precision, NC = no_cores) {
   # casts Rays and computes opening angle of the queryset against the test set
   # Uses the approximation of seeangles2 from Shaw et al.
