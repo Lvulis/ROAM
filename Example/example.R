@@ -23,7 +23,7 @@ gc()
 
 ### Consider writing the OAM map as a backup
 OA_r <- st_as_stars(OAM_map)
-st_dimensions(OA_r) <- st_dimensions(filled_R)
+st_dimensions(OA_r) <- st_dimensions(watermask_r)
 
 write_stars(OA_r, "~/deltas/ROAM/example/OAM_map.tif",
             options = c("COMPRESS=LZW", "TFW=NO"),
