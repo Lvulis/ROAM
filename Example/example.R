@@ -5,14 +5,16 @@ library(stars)
 library(pracma)
 library(parallel)
 library(compiler)
+library(EBImage)
 
 source("~/deltas/ROAM/OAM_functions.R")
 
 watermask_r <- read_stars("~/deltas/ROAM/Example/colville.tif", proxy = F)
-# watermask_r[[1]][NA_ind] <- 0 # we need NA's for OAM
-
 
 watermask <- matrix(as.matrix(watermask_r[[1]]), nrow = dim(watermask_r)[1], ncol = dim(watermask_r)[2])
+
+# If you want to visualize the watermask:
+display(watermask)
 
 ## Example of using OAM
 ptm <- proc.time()
