@@ -2,7 +2,7 @@
 % Please edit documentation in R/OAM.R
 \name{OAM}
 \alias{OAM}
-\title{Compute the Opening Angle Method}
+\title{Opening Angle Method}
 \usage{
 OAM(
   watermask,
@@ -11,13 +11,11 @@ OAM(
   fn_r = NULL,
   ext = NULL,
   no_cores = 3,
-  fork = F,
-  socket = F,
-  native = F
+  parallel = 0
 )
 }
 \arguments{
-\item{watermask}{Numeric: binary matrix where 1 indicates water and 0 indicates land. Should be passed with georeferenced info.}
+\item{watermask}{Numeric or stars: binary matrix where 1 indicates water and 0 indicates land. The georeferenced image as a stars object can be passed.}
 
 \item{precision}{Integer: Number of discrete angles to split circle into (angles tested given by 360/precision)}
 
@@ -29,20 +27,18 @@ OAM(
 
 \item{no_cores}{Integer: Number of cores to use if running in parallel. Parallel is assumed by default.}
 
-\item{fork}{Logical: whether to use fork-type parallelization. See details. Only one of fork, socket, and native should be true.}
-
-\item{socket}{Logical: whether to use socket-type parallelization.}
-
-\item{native}{Logical: whether to use native-type parallelization.}
+\item{parallel}{Integer: Parallelization scheme (see details)}
 }
 \value{
 Numeric: matrix with same dimensions as watermask
 }
 \description{
-test 1
+Compute the opening angle method
 }
 \details{
-This function computes the opening angle method based on Shaw et al., 2008 and through an a modification approximation used in Liang et al., (2015a). This approximation uses the rayshader package to efficiently cast rays from an angle phi to every pixel in the query set Q.
+This function computes the opening angle method based on Shaw et al., 2008 and through an a modification approximation used in Liang et al., (2015a). This R based version uses the rayshader package to efficiently cast rays from an angle phi to every pixel in the query set Q.
+
+The parallel parameter takes integer values from 0 to 3.  0 will indicate no parallelization. Three parallelization schemes are possible: 1 use rayshaders-native parallelization; 2 use socket-based parallelization, neceessary on windows machines; 3 use fork-based parallelization, possible on *nix machines. Rayshaders native parallelization splits the input image into blocks and computes them in parallel, while the other 2 options will compute chunks of opening angles in parallel.
 }
 \examples{
 # See example in Github repo.

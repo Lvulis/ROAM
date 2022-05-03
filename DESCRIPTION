@@ -5,7 +5,7 @@ Authors@R:
     person("Lawrence", "Vulis", , "lvulis@uci.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0003-2779-8772"))
 Description: This package is used to compute the Opening Angle Method (OAM) based on Shaw et al., (2008) for river deltas. It relies on a binary water mask generated using other resources. The package workhorse is the OAM function, which is based on an OAM approximation used in Liang 2015a and the Delta Metrics package. We also acknowledge Jon Shaw who sent a MATLAB version of this approximation for use. Future versions may include tools to automatically convert generated masks to vector geometries (i.e. linestrings) compatible with RivGraph.
-License: BSD3 + file LICENSE
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.2
