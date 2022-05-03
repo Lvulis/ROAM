@@ -1,14 +1,60 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 # ROAM
-R implementation of the Opening Angle Method for delta shoreline extraction.  This is currently a set of functions, but may eventually be re-hashed into an R package.
 
-## Requirements:
-Currently requires `pracma` and `EBimage` to handle some computations. Built on `R 4.1.0`
+<!-- badges: start -->
+<!-- badges: end -->
 
-## R implementation and improvements
-The Opening Angle Method is a method proposed by Shaw et al. 2008 to define the shoreline of river mouth sections. The method relies on computing how much of the open ocean (i.e. the test set) can be seen from a point in the near shore (i.e. the query set), and then defining a continuous line at a critical viewing angle. John Shaw (personel communication) provided a slightly modified version of the algorithm which speeds up OAM by computing how is blocked by land. Here, we document an additional algorithmic change that speeds up computation time. Please note it before running this script or using this implementation.
+The goal of ROAM is to provide a computationally efficient way to
+compute the Opening Angle Method for river delta shorelines. Package
+functionality will be expanded to include automatic generation of
+shoreline vector geometry (i.e. a linestring) for use in RivGraph.
 
-The OAM algorithm runtime is proportional to the size of the query set *Q* and the size of the test set *T*. A natural ways to speed up the process involves reducing either the size of *Q* or of *T*. Here we reduce the size of *Q* by starting with an initial query set *Q<sub>o</sub>*, which consists of all water pixels adjacent to land. Then, compute the viewing angle *a* for every *q* in *Q<sub>o</sub>*. For each pixel *q<sub>o</sub>* in *Q<sub>o</sub>* with *a<sub>o</sub>* below some stopping criteria *a<sub>max</sub>*,  add to *Q<sub>o</sub>* the neighboring pixels that aren't already in *Q<sub>o</sub>* to *Q<sub>o</sub>*. Compute *a* for the neigbors and continue to expand the *Q<sub>o</sub>* until very few pixels are left with *a* less than *a<sub>max</max>*.
+TODO: - Automatic Extraction - Example - Update documents
 
-An additional improvement is parallelization of the computation of `a`. 
+## Installation
 
-I have not run extensive benchmarking to compare this with the OAM version provided by Shaw et al., but expect it to be quite a bit faster. 
+You can install the development version of ROAM from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("Lvulis/ROAM")
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+``` r
+library(ROAM)
+## basic example code
+```
+
+What is special about using `README.Rmd` instead of just `README.md`?
+You can include R chunks like so:
+
+``` r
+summary(cars)
+#>      speed           dist       
+#>  Min.   : 4.0   Min.   :  2.00  
+#>  1st Qu.:12.0   1st Qu.: 26.00  
+#>  Median :15.0   Median : 36.00  
+#>  Mean   :15.4   Mean   : 42.98  
+#>  3rd Qu.:19.0   3rd Qu.: 56.00  
+#>  Max.   :25.0   Max.   :120.00
+```
+
+You’ll still need to render `README.Rmd` regularly, to keep `README.md`
+up-to-date. `devtools::build_readme()` is handy for this. You could also
+use GitHub Actions to re-render `README.Rmd` every time you push. An
+example workflow can be found here:
+<https://github.com/r-lib/actions/tree/v1/examples>.
+
+You can also embed plots, for example:
+
+<img src="man/figures/README-pressure-1.png" width="100%" />
+
+In that case, don’t forget to commit and push the resulting figure
+files, so they display on GitHub and CRAN.
