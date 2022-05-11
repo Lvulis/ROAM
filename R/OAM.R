@@ -25,7 +25,7 @@ OAM <- function(watermask, precision = 360,  save_im = T,
   # Handle a stars-type input
   if(methods::is(watermask, "stars")) {
     ext <- stars::st_dimensions(watermask)$x$refsys
-    watermask <- matrix(as.matrix(watermask[[1]]), nrow = dim(watermask)[1], ncol = dim(watermask)[2])
+    watermask <- as.matrix.stars(watermask)
   }
   if((save_im) & ((is.null(fn_r)) | (is.null(ext)))) stop("Provide write information")
 
