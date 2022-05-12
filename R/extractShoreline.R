@@ -1,7 +1,8 @@
-extractShoreline <- function(map, theta_c, card = NULL, NA_buff = NULL) {
+extractShoreline <- function(map, theta_c, card = NULL, NA_buff = NULL, pixres = NULL) {
 
   if(is.null(card)) stop("You need to specify a starting point to walk from")
   if(methods::is(map, "stars")) {
+    if(is.null(pixres)) pixres <- dim(map)$x$delta
     map <- as.matrix.stars(map)
   }
 
