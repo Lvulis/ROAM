@@ -26,7 +26,7 @@ extractShoreline <- function(map, theta_c, card = NULL, NA_buff = NULL, pixres =
     new_sl[NA_buff==1] <- 0
   }
 
-  new_sl <- keepLargest(new_sl)
+  new_sl <- keep_largest(new_sl)
   new_sl <- bin_thresh(new_sl, 1)
 
   ####WALKER search each time...

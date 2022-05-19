@@ -37,7 +37,7 @@ fillHoles <- function(scene, maxholesize = 0) {
     mode(scenecomp) <- 'integer'
     scenecomp <- EBImage::bwlabel(scenecomp)
     mode(scenecomp) <- 'integer'
-    ox <- lengths(splitObjects(scenecomp))
+    ox <- lengths(split_objects(scenecomp))
 
     scenecomp <- EBImage::rmObjects(scenecomp, names(which(ox <= maxholesize)), reenumerate = F)
     scenecomp[scenecomp > 0] <- 1L
@@ -47,7 +47,7 @@ fillHoles <- function(scene, maxholesize = 0) {
 }
 
 
-splitObjects = function(x) {
+split_objects = function(x) {
   # From EBImage: get R indices of each object in x matrix
   # Arguments:
   #  x: Integer valued labelled image
@@ -57,7 +57,7 @@ splitObjects = function(x) {
   split(z, x[z])
 }
 
-keepLargest <- function(img) {
+keep_largest <- function(img) {
   # Keep only largest element of an image. Relies on python
   # Arguments:
   #  img: integer-valued binary matrix
@@ -66,7 +66,7 @@ keepLargest <- function(img) {
   cncmp <- round(as.matrix(imager::label(imager::as.cimg(img), high_connectivity = T)))
 
   mode(cncmp) <- 'integer'
-  ox <- lengths(splitObjects(cncmp))
+  ox <- lengths(split_objects(cncmp))
 
   if(length(ox) > 1) {
     tokp <- names(which.max(ox))
@@ -91,3 +91,18 @@ bin_thresh <- function(x, thresh) {
   mode(x) <- 'integer'
   x
 }
+
+rename_geometry <- function(g, name){
+  # Rename the geometry column of sf `g` into `name``
+  # Arguments:
+  #  g: sf object
+  #  name: new geometry column name (string)
+  # Returns:
+  #  x: sf object
+  current = attr(g, "sf_column")
+  names(g)[names(g)==current] = name
+  st_geometry(g)=name
+  g
+}
+
+cardSelect
