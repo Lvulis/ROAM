@@ -1,4 +1,4 @@
-idExBase <- function(id, nr, nc) {
+id_ex_base <- function(id, nr, nc) {
   # Conv x and y indices of an N by M matrix
   # Arguments:
   #   A: Rectangular matrix
@@ -16,18 +16,18 @@ idExBase <- function(id, nr, nc) {
   return(cbind(idx, idy))
 }
 
-as.matrix.stars <- function(x) {
+as.matrix.stars <- function(x, i) {
   # Convert the first layer of a stars object into a matrix
   # Necessary for some kind of javascript error that arises sometimes
   # Arguments:
   #  x: stars object on a regular grid
+  #  i: band
   # Returns:
   #  matrix containing the gridded values
-  return(matrix(as.matrix(x[[1]]), nrow = stars::dim(x)[1], ncol = stars::dim(x)[2]))
+  return(matrix(as.matrix(x[[1]][, , i]), nrow = dim(x)[1], ncol = dim(x)[2]))
 }
 
-
-fillHoles <- function(scene, maxholesize = 0) {
+fill_holes <- function(scene, maxholesize = 0) {
   # Translated from Jon Schwenk, RivGraph.
   # Fills holes in binary mask of size <= maxholesize
   if (maxholesize == 0) {
@@ -45,7 +45,6 @@ fillHoles <- function(scene, maxholesize = 0) {
   }
   scene
 }
-
 
 split_objects = function(x) {
   # From EBImage: get R indices of each object in x matrix
@@ -78,7 +77,6 @@ keep_largest <- function(img) {
 
 }
 
-
 bin_thresh <- function(x, thresh) {
   # Binary threshold a numeric/integer vector or matrix
   # Arguments:
@@ -105,4 +103,47 @@ rename_geometry <- function(g, name){
   g
 }
 
-cardSelect
+card_select <- function(newmap, card) {
+  # Obtain the coordinate of in the "card" position along edge of a matrix
+  # Arguments:
+  #  newmap: n x m matrix
+  #  card: cardinal location, see guideline below
+  # Returns:
+  #  2-vector with cx, cy.
+  if(card == 1) {
+    cx = 1; cy = 1
+  } else if(card == 2) {
+    cx = round(nrow(newmap)/4); cy = 1
+  } else if(card == 3) {
+    cx = round(nrow(newmap)/2); cy = 1
+  } else if(card == 4) {
+    cx = round(nrow(newmap)*3/4); cy = 1
+  } else if(card == 5) {
+    cx = nrow(newmap); cy = 1
+  } else if(card == 6) {
+    cx = nrow(newmap); cy = round(ncol(newmap)/4)
+  } else if(card == 7) {
+    cx = nrow(newmap); cy = round(ncol(newmap)/2)
+  } else if(card == 8) {
+    cx = nrow(newmap); cy = round(ncol(newmap)*3/4)
+  } else if(card == 9) {
+    cx = nrow(newmap); cy = ncol(newmap)
+  } else if(card == 10) {
+    cx = round(nrow(newmap)*3/4); cy = ncol(newmap)
+  } else if(card == 11) {
+    cx = round(nrow(newmap)/2); cy = ncol(newmap)
+  } else if(card == 12) {
+    cx = round(nrow(newmap)/4); cy = ncol(newmap)
+  } else if(card == 13) {
+    cx = 1; cy = ncol(newmap)
+  } else if(card == 14) {
+    cx = 1; cy = round(ncol(newmap)/4)
+  } else if(card == 15) {
+    cx = 1; cy = round(ncol(newmap)/2)
+  } else if(card == 16) {
+    cx = 1; cy = round(ncol(newmap)*3/4)
+  }
+  matrix(c(cx, cy), ncol = 2)
+}
+
+

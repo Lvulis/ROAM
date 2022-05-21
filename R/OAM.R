@@ -7,7 +7,7 @@
 #' The parallel parameter takes integer values from 0 to 3.  0 will indicate no parallelization. Three parallelization schemes are possible: 1 use rayshaders-native parallelization; 2 use socket-based parallelization, neceessary on windows machines; 3 use fork-based parallelization, possible on *nix machines. Rayshaders native parallelization splits the input image into blocks and computes them in parallel, while the other 2 options will compute chunks of opening angles in parallel.
 #'
 #'
-#' @param watermask Numeric or stars: binary matrix where 1 indicates water and 0 indicates land. The georeferenced image as a stars object can be passed.
+#' @param watermask Numeric or stars: binary n x m matrix where 1 indicates water and 0 indicates land. The georeferenced image as a stars object can be passed.
 #' @param precision Integer: Number of discrete angles to split circle into (angles tested given by 360/precision)
 #' @param save_im Logical: Whether or not the output should be written to a geoTIFF via stars
 #' @param fn_r Character: Output file name if save_im is true.
@@ -33,7 +33,7 @@ OAM <- function(watermask, precision = 360,  save_im = T,
   G <- sqrt(Slopes$X^2 + Slopes$Y^2)
   rm(Slopes)
   # extract coordinates of edge pixels (edge set to test against)
-  allshore <- idExBase(which((G > 0) & (watermask == 0)),
+  allshore <- id_ex_base(which((G > 0) & (watermask == 0)),
                        nrow(watermask),
                        ncol(watermask))
   # Extract coordinates of water laying on edge (initial query set)
@@ -41,7 +41,7 @@ OAM <- function(watermask, precision = 360,  save_im = T,
   rm(G)
   # Get shallow sea pixels ( pixels where threshold image is 1)
   water_ind <- which(watermask>0.5)
-  sea <- idExBase(water_ind, nrow(watermask), ncol(watermask))
+  sea <- id_ex_base(water_ind, nrow(watermask), ncol(watermask))
   K   <- grDevices::chull(allshore) #convex hull of the edge set
 
   # Test what points are *in* the convex hull. This is used to set up
