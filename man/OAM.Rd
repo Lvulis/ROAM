@@ -9,23 +9,23 @@ OAM(
   precision = 360,
   save_im = T,
   fn_r = NULL,
-  ext = NULL,
+  geoInfo = NULL,
   no_cores = 3,
   parallel = 0
 )
 }
 \arguments{
-\item{watermask}{Numeric or stars: binary matrix where 1 indicates water and 0 indicates land. The georeferenced image as a stars object can be passed.}
+\item{watermask}{Numeric or stars: binary n x m matrix where 1 indicates water and 0 indicates land. The input image should ideally be passed as a georeferenced stars object.}
 
-\item{precision}{Integer: Number of discrete angles to split circle into (angles tested given by 360/precision)}
+\item{precision}{Integer: Number (\code{p}) of discrete sectors to split circle into (angles tested given by 360/precision)}
 
-\item{save_im}{Logical: Whether or not the output should be written to a geoTIFF via stars}
+\item{save_im}{Logical: Whether or not the output should be written to a geoTIFF via `stars``}
 
 \item{fn_r}{Character: Output file name if save_im is true.}
 
-\item{ext}{st_crs: Geographic extent information from the stars object.}
+\item{geoInfo}{st_dimensions: Georaphic information including coordinate reference system, resolution, etc. of the georeferenced output. If a stars object is passed to \code{map}, its st_dimensions properties will be used.}
 
-\item{no_cores}{Integer: Number of cores to use if running in parallel. Parallel is assumed by default.}
+\item{no_cores}{Integer: Number of cores to use if running in parallel. No parallelization is assumed by default.}
 
 \item{parallel}{Integer: Parallelization scheme (see details)}
 }
@@ -36,10 +36,16 @@ Numeric: matrix with same dimensions as watermask
 Compute the opening angle method
 }
 \details{
-This function computes the opening angle method based on Shaw et al., 2008 and through an a modification approximation used in Liang et al., (2015a). This R based version uses the rayshader package to efficiently cast rays from an angle phi to every pixel in the query set Q.
+This function implements the Opening Angle Method. This R based version uses an approximation of the OAM proposed by John Shaw and commonly used by the delta morphology community. See the \code{ROAM} package vignette for details.
 
-The parallel parameter takes integer values from 0 to 3.  0 will indicate no parallelization. Three parallelization schemes are possible: 1 use rayshaders-native parallelization; 2 use socket-based parallelization, neceessary on windows machines; 3 use fork-based parallelization, possible on *nix machines. Rayshaders native parallelization splits the input image into blocks and computes them in parallel, while the other 2 options will compute chunks of opening angles in parallel.
+The parallel parameter takes integer values from 0 to 3.  0 indicates no parallelization. Three parallelization schemes are possible: 1 use rayshaders-native parallelization which dissects an input scene into chunks before raytracing for a given angle; 2 and 3 split up the computation of the raytracing into \code{no_cores} blocks and then tallies the results. \code{2} indicates the use socket-based parallelization, necessary on windows machines; 3 use fork-based parallelization, possible on *nix machines.
 }
 \examples{
-# See example in Github repo.
+\dontrun{
+watermask = stars::read_stars("SaoFrancisco.tif")
+plot(watermask, main = "Sao Francisco")
+OAM_map = OAM(watermask, precision = 720, save_im = T,
+fn_r = "SaoFrancisco_OAM.tif", geoInfo = NULL, no_cores = 3,
+parallel = 2)
+}
 }

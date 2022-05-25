@@ -16,7 +16,7 @@ id_ex_base <- function(id, nr, nc) {
   return(cbind(idx, idy))
 }
 
-as.matrix.stars <- function(x, i) {
+as.matrix.stars <- function(x) {
   # Convert the first layer of a stars object into a matrix
   # Necessary for some kind of javascript error that arises sometimes
   # Arguments:
@@ -24,25 +24,19 @@ as.matrix.stars <- function(x, i) {
   #  i: band
   # Returns:
   #  matrix containing the gridded values
-  return(matrix(as.matrix(x[[1]][, , i]), nrow = dim(x)[1], ncol = dim(x)[2]))
+  return(matrix(as.matrix(x[[1]]), nrow = dim(x)[1], ncol = dim(x)[2]))
 }
 
-fill_holes <- function(scene, maxholesize = 0) {
+fill_holes <- function(scene, maxholesize = 1) {
   # Translated from Jon Schwenk, RivGraph.
-  # Fills holes in binary mask of size <= maxholesize
-  if (maxholesize == 0) {
-    scene = EBImage::fillHull(scene)
-  } else {
-    scenecomp <- (!scene)*1L
-    mode(scenecomp) <- 'integer'
-    scenecomp <- EBImage::bwlabel(scenecomp)
-    mode(scenecomp) <- 'integer'
-    ox <- lengths(split_objects(scenecomp))
+  # Fills holes in binary mask of 0 < size <= maxholesize
 
-    scenecomp <- EBImage::rmObjects(scenecomp, names(which(ox <= maxholesize)), reenumerate = F)
-    scenecomp[scenecomp > 0] <- 1L
-    scene <- (!scenecomp)*1L
-  }
+  cncmp <- label_wrapper((!scene)*1L, conn = F)
+  ox <- lengths(split_objects(cncmp))
+
+  cncmp[unlist(ox[names(which(ox <= maxholesize))])] <- 0
+  cncmp[cncmp > 0] <- 1L
+  scene <- (!cncmp)*1L
   scene
 }
 
@@ -62,14 +56,14 @@ keep_largest <- function(img) {
   #  img: integer-valued binary matrix
   # Returns:
   #  Same sized matrix only containing largest cluster (label id still there)
-  cncmp <- round(as.matrix(imager::label(imager::as.cimg(img), high_connectivity = T)))
+  cncmp <- label_wrapper(img, conn = T)
 
   mode(cncmp) <- 'integer'
   ox <- lengths(split_objects(cncmp))
 
   if(length(ox) > 1) {
     tokp <- names(which.max(ox))
-    clean_mask <- EBImage::rmObjects(cncmp, setdiff(names(ox), tokp), reenumerate = F)
+    clean_mask <- cncmp[unlist(ox[setdiff(names(ox), tokp)])] <- 0
     return(clean_mask)
   } else {
     return(cncmp)
@@ -99,7 +93,7 @@ rename_geometry <- function(g, name){
   #  x: sf object
   current = attr(g, "sf_column")
   names(g)[names(g)==current] = name
-  st_geometry(g)=name
+  sf::st_geometry(g)=name
   g
 }
 
@@ -146,4 +140,14 @@ card_select <- function(newmap, card) {
   matrix(c(cx, cy), ncol = 2)
 }
 
-
+label_wrapper <- function(img, conn = T) {
+  # Emulate EBImage's bwlabel behavior, s.t. pixels == 0 should appear as 0 in the labelled scene!
+  # Arguments:
+  #  img: image to be labelled
+  #  conn: whether to use low or high connectivity in imager::label
+  # Returns:
+  #  labelled image
+  cncmp <- as.matrix(imager::label(imager::as.cimg(img), high_connectivity = conn))
+  cncmp[img==0] <- 0
+  return(cncmp)
+}

@@ -5,42 +5,75 @@
 #' This function is used to define a continuous shoreline vector (i.e. linestring geometry) separating the subaerial delta from the subaqueous delta & the ocean.
 #' By definition, a continuous shoreline vector has an ordered set of coordinates, which is useful for conducting certain analyses, e.g. the spectral analyses described in Vulis et al., ($DATE). A shoreline vector is also necessary for the the Python package RivGraph which is used to analyze delta channel networks.
 #' As the shoreline is defined at the pixel scale, it is often rough and ragged. This causes the typical vectorization (polygonization) approaches implemented in the `stars` and `sf` space to fail. To overcome this, a "walker" approach, wherein the pixels are sorted by walking along the shoreline.
+#' The `card` argument specifies what position along the edge of the image to start walking from, and takes on values from 1 to 16 which correspond to the following locations:
+#' ## NW = 1, N = 2.... NW-W = 16
+#1  0  0 2  0 0  3 0 0  4 0 5
+#0  0  0 0  0 0  0 0 0  0 0 0
+#0  0  0 0  0 0  0 0 0  0 0 0
+#16 0  0 0  0 0  0 0 0  0 0 6
+#0  0  0 0  0 0  0 0 0  0 0 0
+#0  0  0 0  0 0  0 0 0  0 0 0
+#15 0  0 0  0 0  0 0 0  0 0 7
+#0  0  0 0  0 0  0 0 0  0 0 0
+#0  0  0 0  0 0  0 0 0  0 0 0
+#14 0  0 0  0 0  0 0 0  0 0 8
+#0  0  0 0  0 0  0 0 0  0 0 0
+#0  0  0 0  0 0  0 0 0  0 0 0
+#13 0  12 0 0 11 0 0 10 0 0 9
+#' It is highly recommended to pass a georeferenced input image to `map` and avoid any possible issues.
 #'
-#' At
-#' @param map numeric: n x m matrix corresponding to an OAM image
+#' @param map numeric or stars: OAM map to be processed
 #' @param theta numeric: critical value at which to define a shoreline
 #' @param card integer: Cardinal direction at which to start walking (see details)
 #' @param NA_buff integer: indices to remove before walking (see details)
-#' @param pixres numeric: Pixel resolution (see details)
+#' @param pixres numeric: pixel resolution. Shouldn't be passed if passing georeferenced image
+#' @param outCRS st_crs: coordinate reference system of output geometry. Shouldn't be passed if passing georeferenced image
+#' @param xoff numeric: offset value to add to x coordinates. Shouldn't be passed if passing georeferenced image
+#' @param yoff numeric: offset value to add to y coordinates. Shouldn't be passed if passing georeferenced image
 #'
 #' @return `sf` object storing the shoreline vector.
 #' @export
 #'
 #' @examples
-extract_shoreline <- function(map, theta = 45, card = NULL, NA_buff = NULL, pixres = NULL) {
+#' \dontrun{
+#' fn_OAM = system.file("extdata", "SaoFrancisco_OAM.tif", package = "ROAM")
+#' OAM_map = stars::read_stars(fn_OAM)
+#' shoreline = extract_shoreline(OAM_map, theta = 45, card = 13, NA_buff = NULL,
+#' pixres= NULL, outCRS = NULL)
+#' }
+extract_shoreline <- function(map, theta = 45, card = NULL,
+                              NA_buff = NULL, pixres = NULL,
+                              outCRS = NULL, xoff = NULL, yoff = NULL) {
   # Error handling
   if(is.null(card)) stop("You need to specify a starting point to walk from")
   if(methods::is(map, "stars")) {
-    if(is.null(pixres)) pixres <- dim(map)$x$delta
+    if(is.null(pixres)) pixres <- stars::st_dimensions(map)$x$delta
+    if(is.null(outCRS)) outCRS <- sf::st_crs(map)
+    if(is.null(xoff))   xoff   <- stars::st_dimensions(map)$x$offset
+    if(is.null(yoff))   yoff   <- stars::st_dimensions(map)$y$offset
+    deltax = stars::st_dimensions(map)$x$delta
+    deltay = stars::st_dimensions(map)$y$delta
     map <- as.matrix.stars(map)
   }
   if(is.null(pixres)) stop("You need to specify an input pixel resolution")
-
+  if(is.null(outCRS)) stop("You need to specify an output coordinate reference system")
+  if(is.null(xoff))   stop("You need to specify an input x-offset")
+  if(is.null(yoff))   stop("You need to specify an input y-offset")
+  if(!exists("deltax")) deltax = deltay = pixres
   ## CHECK THIS
-  newmap <- bin_thresh(theta)
-  # newmap <- map
-  # newmap[map < th] <- 0
-  # newmap[newmap>0] <- 1
+  newmap <- bin_thresh(map, theta)
+
 
   newmap <- fill_holes(newmap, 4)
 
   newmap <- (!fill_holes((!newmap)*1L, 4)) * 1L
   mode(newmap) <- 'integer'
-  kern <- makeBrush(3, 'diamond')
-  kern[2, 2] <- 0
+  kern <- matrix(c(0, 1, 0, 1, 0, 1, 0, 1, 0), nrow = 3)
 
   ## Identify boundary pixels
-  new_sl <- newmap - EBImage::erode(newmap, kern)
+  # new_sl <- newmap - EBImage::erode(newmap, kern)
+  new_sl <- newmap - round(as.matrix(imager::erode(imager::as.cimg(newmap), mask = imager::as.cimg(kern))))
+
   if(!is.null(NA_buff)) {
     new_sl[NA_buff==1] <- 0
   }
@@ -54,9 +87,8 @@ extract_shoreline <- function(map, theta = 45, card = NULL, NA_buff = NULL, pixr
 
   ### Convert COORDS_REM from pixel number to geographic representation
   # check to make sure these are actually aligned to the real thing and not offset by a pixel
-  COORD_REM[, 1] <- (COORD_REM[, 1] - 0.5)*stars::st_dimensions(OA_r)$x$delta + stars::st_dimensions(OA_r)$x$offset
-  COORD_REM[, 2] <- (COORD_REM[, 2] - 0.5)*stars::st_dimensions(OA_r)$y$delta + stars::st_dimensions(OA_r)$y$offset
-  # COORD_REM <- st_coordinates(s_r_obj2)[, 1:2]
+  COORD_REM[, 1] <- (COORD_REM[, 1] - 0.5)*deltax + xoff
+  COORD_REM[, 2] <- (COORD_REM[, 2] - 0.5)*deltay + yoff
   nr <- nrow(COORD_REM)
 
   # Find starting point as closest COORD to the reference starter = (cx, cy)
@@ -80,10 +112,11 @@ extract_shoreline <- function(map, theta = 45, card = NULL, NA_buff = NULL, pixr
     d_v <- sqrt(rowSums(sweep(COORD_REM, 2, i_ind, "-")^2))
 
     # When the distances are too far- you've walked off the trailand/or done!
-    if(min(abs(d_v)) >= (30*pixres)) {
-      print("TOOBIG")
+    tf = (suppressWarnings(min(abs(d_v))) >= (30*pixres))
+    if(tf) {
+      # print("TOOBIG")
       cnt <- nr
-    } else if(min(abs(d_v)) < (30*pixres)) {
+    } else if(!tf) {
       ## INTRODUCE A "NUKE" -->
       # If there are multiple objects with distance < sqrt(2),
       # then remove from COORD_REM all the guys that aren't ind
@@ -137,7 +170,7 @@ extract_shoreline <- function(map, theta = 45, card = NULL, NA_buff = NULL, pixr
     # (will basically route in between these)
     idmax <- max(intersection_mat[[ii]])
     # Interesection point:
-    st_intersection(temp_LINE_package[idmin, ], temp_LINE_package[ii, ])
+    sf::st_intersection(temp_LINE_package[idmin, ], temp_LINE_package[ii, ])
     # Keep the earleist line, and shortcut from its endpoint to the start
     # of the next line. This'll clip out what was there.
     noderm <- setdiff(idmin:idmax, c(idmin, idmin+1, idmax))
@@ -147,7 +180,7 @@ extract_shoreline <- function(map, theta = 45, card = NULL, NA_buff = NULL, pixr
     COORD_NEW <- COORD_NEW[-nodes_rm, ]
   }
   s_r_obj3 <- sf::st_linestring(COORD_NEW) |>
-    sf::st_sfc(crs = sf::st_crs(OA_r)) |>
+    sf::st_sfc(crs = outCRS) |>
     sf::st_sf() |>
     rename_geometry("geometry")
   s_r_obj3$id <- NA
