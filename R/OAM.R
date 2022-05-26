@@ -61,11 +61,9 @@ OAM <- function(watermask, precision = 360,  save_im = T,
     print("Using rayshader's image breakdown parallelization")
     for(k in seq(360/precision, 360, length.out = precision)) {
       print(k)
-      ptm <- proc.time()
       sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = seq(1e-4, 1e-3, by = 1e-4), sunangle = k,
                                                 zscale = .1, lambert = F, cachemask = tm,
                                                 multicore=T, no_cores = no_cores))
-      proc.time() - ptm
       gc()
     }
     sweepimage2 <- sweepimage[nrow(sweepimage):1, ]*360/precision
