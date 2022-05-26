@@ -1,6 +1,8 @@
 ---
 title: "ROAM Tutorial"
-output: rmarkdown::html_vignette
+output: 
+  rmarkdown::html_vignette:
+    number_sections: true
 bibliography: references.bib
 vignette: >
   %\VignetteIndexEntry{Tutorial}
@@ -17,19 +19,22 @@ knitr::opts_chunk$set(
 
 This vignette is written to guide you in using the Opening Angle Method <OAM> [@shaw2008image] as implemented in the `ROAM` package to extract shorelines in deltaic systems. We will first briefly review the implementation of the OAM used in this package, give an example on how to use the packages functions, and finally discuss some use-cases.
 
-## Algorithm
+# Algorithm
 We assume that you are familiar with the conceptual need for the OAM and the general structure of the algorithm, so we only introduce details and notation as necessary to understand the `ROAM` implementation. First, the most commonly used implementation of the OAM, as found in packages such as `deltametrics` can be tracked back to an approximation of the OAM introduced by John Shaw and provided to us as a `MATLAB` script. In the original algorithm, the opening angle is measured explicitly for every water pixel in the query set $Q$. In the approximation, the circle composing the 2-D range of views is split into $p$ sectors each with angle $\alpha = 360/p$. Then for each sector, a ray bisecting the sector is cast and tested for intersection with the test set $T$ (i.e. the land water interface). The opening angle $\theta$ at each pixel is equal to total number of sectors that don't intersect $T$ times $\alpha$. This approximation is commonly thought to be faster than the original algorithm but can still be rather slow (i.e. taking weeks of computational time to run). It also requires a sufficiently high number of sectors $p$ to prevent aliasing in very wide mouths. `ROAM` utilizes the R package `rayshader` documented by @rayshader to implement the raytracing portion, which has greatly improved runtime. With `rayshader`, $p$ can be as high as 2160 (i.e. $\alpha=1/6$) which allows for extremely smooth shorelines. 
 
-## Example
+# Example
 To use OAM we require a watermask, i.e. a binary-valued image where true values indicate water and false values indicate land or not water. For this tutorial we'll start with a watermask of the Sao Francisco. The watermask was generated from the Global Surface Water database [@pekel2016], which provides Landsat-derived, 30-m spatial resolution watermasks globally. An assumption in `ROAM` is that the input mask is georeferenced to a projected coordinate reference system. The utility of having a georeferenced mask is shown in the two use cases highlighted in the next section. If you are using morphodynamic model output from models such as Delft3D or DeltaRCM, you may consider generating a dummy-set of coordinates on which to project your imagery to. 
 
 ```{r setup}
 library(ROAM)
 library(stars)
 library(sf)
+```
 
+```{r load data}
 # Load SaoFrancisco Watermask
 fn = system.file("extdata", "SaoFrancisco.tif", package = "ROAM")
+# system.file is used to find data associated with a package. You can simply pass a filename such as "./images/randomdelta.tif" to read_stars. 
 watermask = stars::read_stars(fn)
 plot(watermask, main = "Sao Francisco")
 
@@ -38,27 +43,29 @@ plot(watermask, main = "Sao Francisco")
 
 To run the OAM, simply use the `OAM` function. Because this command can take some time to run, we will not run it live in this vignette. 
 ```{r, eval = FALSE}
-OAM_map = OAM(watermask, precision = 720, save_im = T,
+OAM_map = OAM(watermask, precision = 360, save_im = T,
                 fn_r = "SaoFrancisco_OAM.tif", outCRS = NULL, no_cores = 3,
                 parallel = 2)
 ```
 
 The $p$ parameter is the `precision` argument. The remaining arguments deal with managing the output and parallelizations schemes. By default, `OAM` assumes you want to save its output to a georeferenced TIFF (`save_im = T`). You will need to specify an output filename via `fn_r` and output geographic information via `outCRS`.
 
-### Aside on parallelization
+## Aside on mask-making
+Getting a watermask is no trivial task. Abundant literature exists on the topic, and several tools and repositories for obtaining water masks are listed in the [documentation](https://jonschwenk.github.io/RivGraph/maskmaking/index.html) of `RivGraph`. The requirements for water masks used in `ROAM` are not as strict as the requirements for `RivGraph` and also differ in one key aspect. The OAM computational time scales with the number of pixels in the query set $Q$, so any reasonable means to reduce $Q$ will greatly decrease runtime. One easy way to do this is to manualy trim upstream reaches. You'll notice that on the watermask used above. Also, keep in mind that the algorithm works on the entire image so remove unnecessary land up and downshore as much as possible.
+## Aside on parallelization
 Three types of parallelization schemes are implemented and can be accessed with the `parallel` argument. By default no parallelization is used (`parallel=0`), and for the remaining three schemes the default number of cores is 3 (`no_cores = 3`). We highly recommend running the algorithm in parallel. 
 
 `parallel=1` uses `rayshader's` default parallelization scheme, the input image is discretized into bins based on the number of cores. As rayshader computes angles one at a time for each angle `\alpha` this can be a quite slow way of parallelizing. As this option involves invoking `parallel` $p$ times, it is likely slower than the options `2` and `3` detailed below. Back of the envelope benchmarking suggests the same.
 
 `parallel=2` and `parallel=3` split up the computation of the raytracing into `no_cores` blocks and then tallies the results. This can be faster than option `1` but we haven't performed robust benchmarking to test this. The primary difference between options `2` and `3` is that `2` uses socket based parallelization designed for windows users, while `3` uses fork based parallelization designed for *nix users. Fork parallelization can be faster due to the decreased overhead involved, and is recommended when appropriate.
 
-### Extracting a shoreline
+## Extracting a shoreline
 Now that we have an OAM map or image, we actually want to identify the shoreline given the critical angle $\theta_c$. This can easily be done by thresholding the OAM map at $\theta_c$ and then identifying the boundary of the image. The result is the shoreline as a set of marked pixels on a map (i.e. a matrix). However, for the two use cases below its advantageous to not just have this map but the actual continuous shoreline, especially as a georeferenced geometry. To overcome some of the issues in vectorizing a rough object like the shoreline, we developed a technique to walk along the shoreline and sort the shoreline pixels. It requires a starting position to walk from which has to be specified a-priori through the `card` argument. The starting position does not change depending on $\theta_c$ but does change from delta to delta. 
 
 ```{r, eval = FALSE}
 fn_OAM = system.file("extdata", "SaoFrancisco_OAM.tif", package = "ROAM")
 OAM_map = stars::read_stars(fn_OAM)
-shoreline = extract_shoreline(OAM_map, theta = 45, card = 13, NA_buff = NULL, pixres= NULL, outCRS = NULL)
+shoreline = extract_shoreline(OAM_map, theta = 45, card = 5)
 
 ## Save output with write_sf:
 write_sf(shoreline, "OAM_shoreline.shp")
@@ -68,13 +75,13 @@ plot(watermask, main = "Sao Francisco", reset = F)
 plot(shoreline[, 'id'], add = T, col = 'red', lwd = 3, reset = F)
 ```
 
-## Uses
+# Uses
 Here are two examples of how the OAM-derived shoreline is used.
 
-### Delta Channel Network Analysis
+## Delta Channel Network Analysis
 @tejedor2015 and later work introduced a graph theoretic framework to analyze the properties of the distributary channel networks of deltas. A key element in this framework is the location of the outlets of the delta, i.e. where a river ends and the ocean or receiving basin begins, or where the shoreline is. @schwenk2021 introduced the python package `RivGraph` which automates the extraction of distributary channel network graphs and associated graph metrics, building on the earlier work by Tejedor et al. `RivGraph` requires a georeferenced input shoreline passed a linestring geometry, which can be hand-drawn or automatically derived from something like OAM. The output of `extract_shoreline` can be used as an input into `RivGraph`, decreasing the uncertainty in outlet position and improving automation of the analysis pipeline.
 
-### Shoreline characterization
+## Shoreline characterization
 Characterization of delta shoreline structure requires an objective method for determining shoreline location. This includes measures such as roughness, rugosity, and shoreline variance, as well as more advanced ones forthcoming in Vulis et al., (to be submitted). The advanced metrics utilize spectral & time-series analysis techniques and therefore require an ordered set of coordinates representing the shoreline. 
 
-## References
+# References

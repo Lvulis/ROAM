@@ -37,8 +37,13 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
-
 .DS_Store
 .Rproj.user
 .Rdata
 inst/doc
+
+# ESRI shapefiles:
+.dbf
+.prj
+.shx
+.shp

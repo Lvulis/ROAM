@@ -59,16 +59,14 @@ keep_largest <- function(img) {
   cncmp <- label_wrapper(img, conn = T)
 
   mode(cncmp) <- 'integer'
-  ox <- lengths(split_objects(cncmp))
+  xid = split_objects(cncmp)
+  ox <- lengths(xid)
 
   if(length(ox) > 1) {
     tokp <- names(which.max(ox))
-    clean_mask <- cncmp[unlist(ox[setdiff(names(ox), tokp)])] <- 0
-    return(clean_mask)
-  } else {
-    return(cncmp)
+    cncmp[unlist(xid[setdiff(names(ox), tokp)])] <- 0
   }
-
+  return(bin_thresh(cncmp, 1))
 }
 
 bin_thresh <- function(x, thresh) {
@@ -147,7 +145,10 @@ label_wrapper <- function(img, conn = T) {
   #  conn: whether to use low or high connectivity in imager::label
   # Returns:
   #  labelled image
-  cncmp <- as.matrix(imager::label(imager::as.cimg(img), high_connectivity = conn))
-  cncmp[img==0] <- 0
-  return(cncmp)
+
+  cimgd <- imager::as.cimg(img) > .5
+  lab <- imager::label(cimgd, conn) + 1 # |>
+  lab <- lab * imager::as.cimg(cimgd)
+
+  return(as.matrix(lab[, , , 1]))
 }

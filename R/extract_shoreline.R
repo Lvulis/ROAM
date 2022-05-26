@@ -79,7 +79,6 @@ extract_shoreline <- function(map, theta = 45, card = NULL,
   }
 
   new_sl <- keep_largest(new_sl)
-  new_sl <- bin_thresh(new_sl, 1)
 
   ####WALKER search each time...
   COORD <- COORD_REM <- id_ex_base(which(new_sl>=1), nrow(new_sl), ncol(new_sl))
