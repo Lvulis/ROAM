@@ -44,7 +44,7 @@ plot(watermask, main = "Sao Francisco")
 To run the OAM, simply use the `OAM` function. Because this command can take some time to run, we will not run it live in this vignette. 
 ```{r, eval = FALSE}
 OAM_map = OAM(watermask, precision = 360, save_im = T,
-                fn_r = "SaoFrancisco_OAM.tif", outCRS = NULL, no_cores = 3,
+                fn_r = "SaoFrancisco_OAM.tif", no_cores = 3,
                 parallel = 2)
 ```
 
