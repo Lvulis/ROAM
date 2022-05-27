@@ -61,7 +61,7 @@ OAM <- function(watermask, precision = 360,  save_im = T,
     print("Using rayshader's image breakdown parallelization")
     for(k in seq(360/precision, 360, length.out = precision)) {
       print(k)
-      sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = seq(1e-4, 1e-3, by = 1e-4), sunangle = k,
+      sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = c(1e-4, 1.1e-4), sunangle = k,
                                                 zscale = .1, lambert = F, cachemask = tm,
                                                 multicore=T, no_cores = no_cores))
       gc()
@@ -85,7 +85,7 @@ OAM <- function(watermask, precision = 360,  save_im = T,
       print(j)
       for(k in (j*nb+(1:nb))*360/precision) {
         print(k)
-        sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = seq(1e-4, 1e-3, by = 1e-4), sunangle = k,
+        sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = c(1e-4, 1.1e-4), sunangle = k,
                                                   zscale = .1, lambert = F, cachemask = tm,
                                                   multicore=F, no_cores = no_cores))
         gc()
@@ -101,7 +101,7 @@ OAM <- function(watermask, precision = 360,  save_im = T,
     sweepimage_par =  parallel::mclapply(0:(no_cores-1), \(j) {
       print(j)
       for(k in (j*nb+(1:nb))*360/precision) {
-        sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = seq(1e-4, 1e-3, by = 1e-4), sunangle = k,
+        sweepimage = sweepimage + floor(rayshader::ray_shade((!watermask)*1L, anglebreaks = c(1e-4, 1.1e-4), sunangle = k,
                                                              zscale = .1, lambert = F, cachemask = tm,
                                                              multicore=F, no_cores = no_cores))
         gc()
