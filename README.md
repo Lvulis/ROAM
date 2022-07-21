@@ -9,8 +9,8 @@
 The goal of ROAM is to provide a computationally efficient way to
 compute the Opening Angle Method for river delta shorelines. The package
 also provides functionality to automatically generate an `sf` vector
-geometry (i.e. a linestring) of the shoreline for use in RivGraph or in
-a GIS.
+geometry (i.e. a linestring) of the shoreline for use in
+[RivGraph](https://github.com/VeinsOfTheEarth/RivGraph) or in a GIS.
 
 ## Installation
 
