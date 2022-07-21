@@ -8,7 +8,7 @@ Description: This package is used to compute the Opening Angle Method (OAM) base
 License: GPL (>= 3) + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 ByteCompile: true
 Imports: 
     imager,
